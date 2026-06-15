@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RASHISAニーズダッシュボード</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f5f5f3; color: #1a1a18; font-size: 14px; }
+  .header { background: #fff; border-bottom: 1px solid #e8e6df; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .header h1 { font-size: 16px; font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .updated { font-size: 12px; color: #888; }
+  .refresh-btn { padding: 6px 14px; border: 1px solid #d0cfc8; border-radius: 6px; background: #fff; cursor: pointer; font-size: 12px; color: #555; }
+  .refresh-btn:hover { background: #f5f5f3; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e8e6df; text-align: center; }
+  .stat-label { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 500; color: #1a1a18; line-height: 1; }
+  .stat-value.sm { font-size: 18px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e8e6df; }
+  .card-title { font-size: 12px; font-weight: 500; color: #888; margin-bottom: 12px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #666; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .table-card { background: #fff; border-radius: 10px; border: 1px solid #e8e6df; overflow: hidden; }
+  .table-header { padding: 12px 16px; border-bottom: 1px solid #e8e6df; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .filter-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; border: 1px solid #d0cfc8; background: transparent; color: #666; cursor: pointer; }
+  .filter-btn.active { background: #3266ad; color: #fff; border-color: #3266ad; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 16px; font-weight: 500; color: #888; background: #fafaf8; border-bottom: 1px solid #e8e6df; }
+  td { padding: 8px 16px; border-top: 1px solid #f0efe8; vertical-align: middle; color: #555; word-break: break-all; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
+  .table-footer { padding: 8px 16px; border-top: 1px solid #e8e6df; font-size: 11px; color: #888; }
+  .loading { text-align: center; padding: 60px 16px; color: #888; font-size: 14px; }
+  .error-box { background: #fff0f0; border: 1px solid #fcc; border-radius: 8px; padding: 16px; margin: 16px 0; color: #c33; font-size: 13px; }
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .charts { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>RASHISA フィロソフィーサロン — 参加企業ニーズ</h1>
+  <div class="header-right">
+    <span class="updated" id="updatedAt">読み込み中...</span>
+    <button class="refresh-btn" onclick="loadData()">↻ 更新</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="loading" class="loading">スプレッドシートからデータを読み込み中...</div>
+  <div id="errorBox" class="error-box" style="display:none"></div>
+  <div id="content" style="display:none">
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">回答企業数</div><div class="stat-value" id="s-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">最多ニーズ</div><div class="stat-value sm" id="s-top">—</div></div>
+      <div class="stat-card"><div class="stat-label">営業系ニーズ保有</div><div class="stat-value" id="s-sales">—</div></div>
+      <div class="stat-card"><div class="stat-label">採用ニーズ保有</div><div class="stat-value" id="s-hire">—</div></div>
+    </div>
+    <div class="charts">
+      <div class="chart-card">
+        <div class="card-title">ニーズ別の企業数</div>
+        <div class="legend" id="legendBar"></div>
+        <div style="position:relative;height:300px;"><canvas id="barChart" role="img" aria-label="ニーズ別企業数"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="card-title">カテゴリ別の割合</div>
+        <div class="legend" id="legendPie"></div>
+        <div style="position:relative;height:300px;"><canvas id="pieChart" role="img" aria-label="カテゴリ別割合"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <span style="font-size:12px;font-weight:500;margin-right:4px;">絞り込み</span>
+        <button class="filter-btn active" onclick="setFilter('all',this)">すべて</button>
+        <button class="filter-btn" onclick="setFilter('売上拡大',this)">売上拡大</button>
+        <button class="filter-btn" onclick="setFilter('リード獲得',this)">リード獲得</button>
+        <button class="filter-btn" onclick="setFilter('商談数増加',this)">商談数増加</button>
+        <button class="filter-btn" onclick="setFilter('採用',this)">採用系</button>
+        <button class="filter-btn" onclick="setFilter('AI',this)">AI・DX</button>
+      </div>
+      <table>
+        <thead><tr><th style="width:38%">会社名</th><th>強化テーマ</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="table-footer" id="tableFooter"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// スプレッドシートID（変更不要）
+// ============================================================
+const SHEET_ID = '1m8Fxzo3-174zPjnbhRxnK6BtFRu_wJQ7s84zyDDoYCU';
+const GID = '1996000310';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+const COLORS = {
+  '売上拡大':'#3266ad','リード獲得':'#1D9E75','商談数増加':'#7F77DD',
+  '中途採用':'#D85A30','AI活用':'#D4537E','新卒採用':'#BA7517',
+  '営業組織構築':'#3B6D11','インサイドセールス':'#0F6E56','アライアンス先探し':'#993556',
+  'LLMO対策':'#185FA5','M&A(買手)':'#5F5E5A','業務効率化':'#854F0B','採用ブランディング':'#639922'
+};
+
+let allCompanies = [];
+let barChartInst = null;
+let pieChartInst = null;
+
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const result = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = [];
+    let cell = '';
+    let inQuote = false;
+    for (let c = 0; c < lines[i].length; c++) {
+      const ch = lines[i][c];
+      if (ch === '"') { inQuote = !inQuote; }
+      else if (ch === ',' && !inQuote) { row.push(cell); cell = ''; }
+      else { cell += ch; }
+    }
+    row.push(cell);
+    result.push(row);
+  }
+  return result;
+}
+
+async function loadData() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('errorBox').style.display = 'none';
+
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const companies = [];
+    const needsCount = {};
+
+    // Q列 = インデックス16（0始まり）
+    rows.forEach(row => {
+      const companyName = (row[1] || '').trim();
+      const rawNeeds = (row[16] || '').trim();
+      if (!companyName || !rawNeeds || rawNeeds === '特になし') return;
+      const needs = rawNeeds.split(',').map(n => n.trim()).filter(n => n && n !== '特になし');
+      if (needs.length === 0) return;
+      companies.push({ name: companyName, needs });
+      needs.forEach(n => { needsCount[n] = (needsCount[n] || 0) + 1; });
+    });
+
+    allCompanies = companies;
+    renderDashboard(needsCount, companies.length);
+    document.getElementById('updatedAt').textContent = '更新: ' + new Date().toLocaleString('ja-JP');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('errorBox').textContent = 'データ取得エラー: ' + e.message + '（スプレッドシートの共有設定を確認してください）';
+  }
+}
+
+function renderDashboard(needsCount, total) {
+  const sorted = Object.entries(needsCount).sort((a,b) => b[1] - a[1]);
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-top').textContent = sorted[0]?.[0] || '—';
+
+  const salesNeeds = ['売上拡大','リード獲得','商談数増加','インサイドセールス'];
+  const hireNeeds  = ['中途採用','新卒採用','採用ブランディング','営業組織構築'];
+  const salesCount = allCompanies.filter(c => c.needs.some(n => salesNeeds.includes(n))).length;
+  const hireCount  = allCompanies.filter(c => c.needs.some(n => hireNeeds.includes(n))).length;
+  document.getElementById('s-sales').textContent = total ? Math.round(salesCount / total * 100) + '%' : '—';
+  document.getElementById('s-hire').textContent  = total ? Math.round(hireCount  / total * 100) + '%' : '—';
+
+  // 棒グラフ
+  const legendBar = document.getElementById('legendBar');
+  legendBar.innerHTML = '';
+  sorted.slice(0, 5).forEach(([n, v]) => {
+    legendBar.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${COLORS[n]||'#888'}"></span>${n} ${v}社</span>`;
+  });
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(x => x[0]),
+      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: sorted.map(x => COLORS[x[0]] || '#888'), borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x}社` } } },
+      scales: {
+        x: { ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        y: { ticks: { color: '#555', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  // 円グラフ
+  const catData = [
+    { label: '営業・売上',  keys: ['売上拡大','リード獲得','商談数増加','インサイドセールス'], color: '#3266ad' },
+    { label: '採用・組織',  keys: ['中途採用','新卒採用','採用ブランディング','営業組織構築'], color: '#D85A30' },
+    { label: 'DX・その他', keys: ['AI活用','LLMO対策','業務効率化','M&A(買手)'],            color: '#D4537E' },
+    { label: 'アライアンス', keys: ['アライアンス先探し'],                                    color: '#888780' },
+  ];
+  catData.forEach(c => { c.value = c.keys.reduce((s, k) => s + (needsCount[k] || 0), 0); });
+  const catTotal = catData.reduce((s, c) => s + c.value, 0);
+
+  const legendPie = document.getElementById('legendPie');
+  legendPie.innerHTML = '';
+  catData.forEach(c => {
+    legendPie.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.label} ${catTotal ? Math.round(c.value / catTotal * 100) : 0}%</span>`;
+  });
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: { labels: catData.map(c => c.label), datasets: [{ data: catData.map(c => c.value), backgroundColor: catData.map(c => c.color), borderWidth: 2, borderColor: '#fff' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed}件` } } }, cutout: '60%' }
+  });
+
+  renderTable();
+}
+
+function setFilter(f, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentFilter = f;
+  renderTable();
+}
+
+let currentFilter = 'all';
+
+function matchFilter(needs, f) {
+  if (f === 'all') return true;
+  if (f === '採用') return needs.some(n => n.includes('採用') || n.includes('組織') || n.includes('ブランディング'));
+  if (f === 'AI')   return needs.some(n => ['AI活用','LLMO対策','業務効率化'].includes(n));
+  return needs.includes(f);
+}
+
+function renderTable() {
+  const filtered = allCompanies.filter(c => matchFilter(c.needs, currentFilter));
+  document.getElementById('tbody').innerHTML = filtered.map(c => {
+    const badges = c.needs.map(n => `<span class="badge" style="background:${COLORS[n]||'#888'}18;color:${COLORS[n]||'#555'};border:1px solid ${COLORS[n]||'#888'}40">${n}</span>`).join('');
+    return `<tr><td>${c.name}</td><td>${badges}</td></tr>`;
+  }).join('');
+  document.getElementById('tableFooter').textContent = `${filtered.length}社 / 全${allCompanies.length}社`;
+}
+
+loadData();
+</script>
+</body>
+</html>
