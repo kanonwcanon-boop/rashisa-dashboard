@@ -6,41 +6,47 @@
 <title>RASHISAニーズダッシュボード</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f5f5f3; color: #1a1a18; font-size: 14px; }
-  .header { background: #fff; border-bottom: 1px solid #e8e6df; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-  .header h1 { font-size: 16px; font-weight: 500; }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .updated { font-size: 12px; color: #888; }
-  .refresh-btn { padding: 6px 14px; border: 1px solid #d0cfc8; border-radius: 6px; background: #fff; cursor: pointer; font-size: 12px; color: #555; }
-  .refresh-btn:hover { background: #f5f5f3; }
-  .main { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat-card { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e8e6df; text-align: center; }
-  .stat-label { font-size: 11px; color: #888; margin-bottom: 6px; }
-  .stat-value { font-size: 28px; font-weight: 500; color: #1a1a18; line-height: 1; }
-  .stat-value.sm { font-size: 18px; }
-  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .chart-card { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e8e6df; }
-  .card-title { font-size: 12px; font-weight: 500; color: #888; margin-bottom: 12px; }
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #666; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-  .table-card { background: #fff; border-radius: 10px; border: 1px solid #e8e6df; overflow: hidden; }
-  .table-header { padding: 12px 16px; border-bottom: 1px solid #e8e6df; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .filter-btn { padding: 4px 12px; border-radius: 20px; font-size: 11px; border: 1px solid #d0cfc8; background: transparent; color: #666; cursor: pointer; }
-  .filter-btn.active { background: #3266ad; color: #fff; border-color: #3266ad; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; padding: 8px 16px; font-weight: 500; color: #888; background: #fafaf8; border-bottom: 1px solid #e8e6df; }
-  td { padding: 8px 16px; border-top: 1px solid #f0efe8; vertical-align: middle; color: #555; word-break: break-all; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin: 2px; }
-  .table-footer { padding: 8px 16px; border-top: 1px solid #e8e6df; font-size: 11px; color: #888; }
-  .loading { text-align: center; padding: 60px 16px; color: #888; font-size: 14px; }
-  .error-box { background: #fff0f0; border: 1px solid #fcc; border-radius: 8px; padding: 16px; margin: 16px 0; color: #c33; font-size: 13px; }
-  @media (max-width: 600px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .charts { grid-template-columns: 1fr; }
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#f5f5f3;color:#1a1a18;font-size:14px}
+.header{background:#fff;border-bottom:1px solid #e8e6df;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:10}
+.header h1{font-size:15px;font-weight:500}
+.header-right{display:flex;align-items:center;gap:10px}
+.updated{font-size:11px;color:#888}
+.refresh-btn{padding:5px 12px;border:1px solid #d0cfc8;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;color:#555}
+.refresh-btn:hover{background:#f5f5f3}
+.tab-bar{background:#fff;border-bottom:1px solid #e8e6df;display:flex;overflow-x:auto;padding:0 20px}
+.tab-btn{padding:10px 16px;font-size:13px;font-weight:500;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab-btn.active{color:#3266ad;border-bottom-color:#3266ad}
+.main{max-width:1100px;margin:0 auto;padding:20px 16px}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:10px;padding:14px;border:1px solid #e8e6df;text-align:center}
+.stat-label{font-size:11px;color:#888;margin-bottom:4px}
+.stat-value{font-size:24px;font-weight:500;color:#1a1a18;line-height:1}
+.stat-value.sm{font-size:15px}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.card{background:#fff;border-radius:10px;padding:14px;border:1px solid #e8e6df;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:500;color:#888;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#666}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filter-btn{padding:4px 12px;border-radius:20px;font-size:11px;border:1px solid #d0cfc8;background:transparent;color:#666;cursor:pointer}
+.filter-btn.active{background:#3266ad;color:#fff;border-color:#3266ad}
+.tbl-wrap{background:#fff;border-radius:10px;border:1px solid #e8e6df;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+th{text-align:left;padding:8px 12px;font-weight:500;color:#888;background:#fafaf8;border-bottom:1px solid #e8e6df}
+td{padding:7px 12px;border-top:1px solid #f0efe8;color:#555;vertical-align:top;word-break:break-all}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;margin:1px}
+.tbl-footer{padding:7px 12px;font-size:11px;color:#888;border-top:1px solid #e8e6df}
+.needs-bar{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-bg{flex:1;background:#f0efe8;border-radius:3px;height:6px}
+.bar-fill{height:6px;border-radius:3px}
+.search-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.loading{text-align:center;padding:60px;color:#888}
+.error-box{background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:14px;margin:12px 0;color:#c33;font-size:13px}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -53,51 +59,148 @@
   </div>
 </div>
 
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('needs',this)">ニーズ分析</button>
+  <button class="tab-btn" onclick="switchTab('all',this)">全回答一覧</button>
+  <button class="tab-btn" onclick="switchTab('satisfaction',this)">満足度</button>
+  <button class="tab-btn" onclick="switchTab('bydate',this)">日程別分析</button>
+</div>
+
 <div class="main">
   <div id="loading" class="loading">スプレッドシートからデータを読み込み中...</div>
   <div id="errorBox" class="error-box" style="display:none"></div>
   <div id="content" style="display:none">
-    <div class="stats">
-      <div class="stat-card"><div class="stat-label">回答企業数</div><div class="stat-value" id="s-total">—</div></div>
-      <div class="stat-card"><div class="stat-label">最多ニーズ</div><div class="stat-value sm" id="s-top">—</div></div>
-      <div class="stat-card"><div class="stat-label">営業系ニーズ保有</div><div class="stat-value" id="s-sales">—</div></div>
-      <div class="stat-card"><div class="stat-label">採用ニーズ保有</div><div class="stat-value" id="s-hire">—</div></div>
-    </div>
-    <div class="charts">
-      <div class="chart-card">
-        <div class="card-title">ニーズ別の企業数</div>
-        <div class="legend" id="legendBar"></div>
-        <div style="position:relative;height:300px;"><canvas id="barChart" role="img" aria-label="ニーズ別企業数"></canvas></div>
+
+    <!-- タブ1: ニーズ分析 -->
+    <div id="tab-needs" class="tab-content active">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">総回答数（延べ）</div><div class="stat-value" id="n-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">最多ニーズ</div><div class="stat-value sm" id="n-top">—</div></div>
+        <div class="stat-card"><div class="stat-label">営業系ニーズ（延べ）</div><div class="stat-value" id="n-sales">—</div></div>
+        <div class="stat-card"><div class="stat-label">採用ニーズ（延べ）</div><div class="stat-value" id="n-hire">—</div></div>
       </div>
-      <div class="chart-card">
-        <div class="card-title">カテゴリ別の割合</div>
-        <div class="legend" id="legendPie"></div>
-        <div style="position:relative;height:300px;"><canvas id="pieChart" role="img" aria-label="カテゴリ別割合"></canvas></div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">ニーズ別の回答数（延べ）</div>
+          <div class="legend" id="legendBar"></div>
+          <div style="position:relative;height:320px"><canvas id="barChart" role="img" aria-label="ニーズ別回答数の横棒グラフ">ニーズ別の延べ回答件数</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">カテゴリ別の割合</div>
+          <div class="legend" id="legendPie"></div>
+          <div style="position:relative;height:320px"><canvas id="pieChart" role="img" aria-label="カテゴリ別割合の円グラフ">カテゴリ別の割合</canvas></div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <div style="padding:10px 12px;border-bottom:1px solid #e8e6df">
+          <div class="filter-row">
+            <span style="font-size:12px;font-weight:500;color:#1a1a18">絞り込み</span>
+            <button class="filter-btn active" onclick="setNeedsFilter('all',this)">すべて</button>
+            <button class="filter-btn" onclick="setNeedsFilter('売上拡大',this)">売上拡大</button>
+            <button class="filter-btn" onclick="setNeedsFilter('リード獲得',this)">リード獲得</button>
+            <button class="filter-btn" onclick="setNeedsFilter('商談数増加',this)">商談数増加</button>
+            <button class="filter-btn" onclick="setNeedsFilter('採用',this)">採用系</button>
+            <button class="filter-btn" onclick="setNeedsFilter('AI',this)">AI・DX</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th style="width:38%">会社名</th><th>強化テーマ</th></tr></thead>
+          <tbody id="needsTbody"></tbody>
+        </table>
+        <div class="tbl-footer" id="needsFooter"></div>
       </div>
     </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:12px;font-weight:500;margin-right:4px;">絞り込み</span>
-        <button class="filter-btn active" onclick="setFilter('all',this)">すべて</button>
-        <button class="filter-btn" onclick="setFilter('売上拡大',this)">売上拡大</button>
-        <button class="filter-btn" onclick="setFilter('リード獲得',this)">リード獲得</button>
-        <button class="filter-btn" onclick="setFilter('商談数増加',this)">商談数増加</button>
-        <button class="filter-btn" onclick="setFilter('採用',this)">採用系</button>
-        <button class="filter-btn" onclick="setFilter('AI',this)">AI・DX</button>
+
+    <!-- タブ2: 全回答一覧 -->
+    <div id="tab-all" class="tab-content">
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="会社名・ニーズで検索..." oninput="filterAll()" style="flex:1;min-width:160px;font-size:12px;padding:7px 10px;border:1px solid #d0cfc8;border-radius:6px;background:#fff;color:#1a1a18">
+        <select id="sessionFilter" onchange="filterAll()" style="font-size:12px;padding:7px 10px;border:1px solid #d0cfc8;border-radius:6px;background:#fff;color:#1a1a18">
+          <option value="">すべての会</option>
+          <option value="昼">昼の部</option>
+          <option value="夜">夜の部</option>
+        </select>
       </div>
-      <table>
-        <thead><tr><th style="width:38%">会社名</th><th>強化テーマ</th></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-      <div class="table-footer" id="tableFooter"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:25%">会社名</th>
+              <th style="width:18%">参加日程</th>
+              <th style="width:6%">席</th>
+              <th style="width:6%">全体</th>
+              <th>強化テーマ</th>
+            </tr>
+          </thead>
+          <tbody id="allTbody"></tbody>
+        </table>
+        <div class="tbl-footer" id="allFooter"></div>
+      </div>
     </div>
+
+    <!-- タブ3: 満足度 -->
+    <div id="tab-satisfaction" class="tab-content">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">席配置 平均</div><div class="stat-value" id="s-seat">—</div></div>
+        <div class="stat-card"><div class="stat-label">全体満足度 平均</div><div class="stat-value" id="s-overall">—</div></div>
+        <div class="stat-card"><div class="stat-label">満点（5点）の割合</div><div class="stat-value" id="s-perfect">—</div></div>
+        <div class="stat-card"><div class="stat-label">回答社数</div><div class="stat-value" id="s-count">—</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">席配置の満足度分布</div>
+          <div style="position:relative;height:220px"><canvas id="seatChart" role="img" aria-label="席配置満足度の分布">席配置満足度の分布</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">全体満足度の分布</div>
+          <div style="position:relative;height:220px"><canvas id="overallChart" role="img" aria-label="全体満足度の分布">全体満足度の分布</canvas></div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th style="width:28%">会社名</th><th style="width:8%">席</th><th style="width:8%">全体</th><th>学び・コメント</th></tr></thead>
+          <tbody id="satisfTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- タブ4: 日程別分析 -->
+    <div id="tab-bydate" class="tab-content">
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:12px;color:#888;font-weight:500;white-space:nowrap">日程を選択</span>
+        <select id="dateSelect" onchange="renderByDate()" style="flex:1;min-width:200px;font-size:12px;padding:7px 10px;border:1px solid #d0cfc8;border-radius:6px;background:#fff;color:#1a1a18">
+          <option value="__all__">すべての日程（累計）</option>
+        </select>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">参加企業数</div><div class="stat-value" id="d-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">総回答数（延べ）</div><div class="stat-value" id="d-needs">—</div></div>
+        <div class="stat-card"><div class="stat-label">最多ニーズ</div><div class="stat-value sm" id="d-top">—</div></div>
+        <div class="stat-card"><div class="stat-label">満足度平均</div><div class="stat-value" id="d-sat">—</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">ニーズランキング（延べ件数）</div>
+          <div id="dateNeedsRanking"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">全体満足度の分布</div>
+          <div style="position:relative;height:200px"><canvas id="dateSatChart" role="img" aria-label="この日程の満足度分布">満足度分布</canvas></div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th style="width:35%">会社名</th><th style="width:8%">席</th><th style="width:8%">全体</th><th>強化テーマ</th></tr></thead>
+          <tbody id="dateTbody"></tbody>
+        </table>
+        <div class="tbl-footer" id="dateFooter"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script>
-// ============================================================
-// スプレッドシートID（変更不要）
-// ============================================================
 const SHEET_ID = '1m8Fxzo3-174zPjnbhRxnK6BtFRu_wJQ7s84zyDDoYCU';
 const GID = '1996000310';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
@@ -109,24 +212,24 @@ const COLORS = {
   'LLMO対策':'#185FA5','M&A(買手)':'#5F5E5A','業務効率化':'#854F0B','採用ブランディング':'#639922'
 };
 
-let allCompanies = [];
-let barChartInst = null;
-let pieChartInst = null;
+let allData = [];
+let barChartInst=null, pieChartInst=null, seatChartInst=null, overallChartInst=null, dateSatChartInst=null;
+let needsFilter = 'all';
 
 function parseCSV(text) {
   const lines = text.split('\n');
   const result = [];
   for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
     const row = [];
-    let cell = '';
-    let inQuote = false;
+    let cell = '', inQ = false;
     for (let c = 0; c < lines[i].length; c++) {
       const ch = lines[i][c];
-      if (ch === '"') { inQuote = !inQuote; }
-      else if (ch === ',' && !inQuote) { row.push(cell); cell = ''; }
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { row.push(cell.trim()); cell = ''; }
       else { cell += ch; }
     }
-    row.push(cell);
+    row.push(cell.trim());
     result.push(row);
   }
   return result;
@@ -136,124 +239,237 @@ async function loadData() {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('content').style.display = 'none';
   document.getElementById('errorBox').style.display = 'none';
-
   try {
     const res = await fetch(CSV_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const rows = parseCSV(text);
+    allData = rows.map(row => ({
+      timestamp: row[0] || '',
+      company:   (row[1] || '').trim(),
+      name:      (row[2] || '').trim(),
+      session:   (row[3] || '').trim(),
+      seat:      parseInt(row[4]) || 0,
+      seatReason:(row[5] || '').trim(),
+      overall:   parseInt(row[6]) || 0,
+      overallReason:(row[7]||'').trim(),
+      learning:  (row[8] || '').trim(),
+      rawNeeds:  (row[16] || '').trim(),
+      needs:     (row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'),
+    })).filter(r => r.company && r.needs.length > 0);
 
-    const companies = [];
-    const needsCount = {};
-
-    // Q列 = インデックス16（0始まり）
-    rows.forEach(row => {
-      const companyName = (row[1] || '').trim();
-      const rawNeeds = (row[16] || '').trim();
-      if (!companyName || !rawNeeds || rawNeeds === '特になし') return;
-      const needs = rawNeeds.split(',').map(n => n.trim()).filter(n => n && n !== '特になし');
-      if (needs.length === 0) return;
-      companies.push({ name: companyName, needs });
-      needs.forEach(n => { needsCount[n] = (needsCount[n] || 0) + 1; });
-    });
-
-    allCompanies = companies;
-    renderDashboard(needsCount, companies.length);
     document.getElementById('updatedAt').textContent = '更新: ' + new Date().toLocaleString('ja-JP');
+    buildDateSelect();
+    renderNeeds();
+    renderAll();
+    renderSatisfaction();
+    renderByDate();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-
-  } catch (e) {
+  } catch(e) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('errorBox').style.display = 'block';
-    document.getElementById('errorBox').textContent = 'データ取得エラー: ' + e.message + '（スプレッドシートの共有設定を確認してください）';
+    document.getElementById('errorBox').textContent = 'データ取得エラー: ' + e.message;
   }
 }
 
-function renderDashboard(needsCount, total) {
-  const sorted = Object.entries(needsCount).sort((a,b) => b[1] - a[1]);
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
 
-  document.getElementById('s-total').textContent = total;
-  document.getElementById('s-top').textContent = sorted[0]?.[0] || '—';
+// ===== タブ1: ニーズ分析 =====
+function getNeedsCount(data) {
+  const c = {};
+  data.forEach(r => r.needs.forEach(n => { c[n]=(c[n]||0)+1; }));
+  return c;
+}
 
+function renderNeeds() {
+  const nc = getNeedsCount(allData);
+  const sorted = Object.entries(nc).sort((a,b)=>b[1]-a[1]);
+  const totalNeeds = Object.values(nc).reduce((s,v)=>s+v,0);
   const salesNeeds = ['売上拡大','リード獲得','商談数増加','インサイドセールス'];
   const hireNeeds  = ['中途採用','新卒採用','採用ブランディング','営業組織構築'];
-  const salesCount = allCompanies.filter(c => c.needs.some(n => salesNeeds.includes(n))).length;
-  const hireCount  = allCompanies.filter(c => c.needs.some(n => hireNeeds.includes(n))).length;
-  document.getElementById('s-sales').textContent = total ? Math.round(salesCount / total * 100) + '%' : '—';
-  document.getElementById('s-hire').textContent  = total ? Math.round(hireCount  / total * 100) + '%' : '—';
+  const salesCount = salesNeeds.reduce((s,k)=>s+(nc[k]||0),0);
+  const hireCount  = hireNeeds.reduce((s,k)=>s+(nc[k]||0),0);
 
-  // 棒グラフ
+  document.getElementById('n-total').textContent = totalNeeds + '件';
+  document.getElementById('n-top').textContent   = sorted[0]?.[0] || '—';
+  document.getElementById('n-sales').textContent = salesCount + '件';
+  document.getElementById('n-hire').textContent  = hireCount + '件';
+
   const legendBar = document.getElementById('legendBar');
   legendBar.innerHTML = '';
-  sorted.slice(0, 5).forEach(([n, v]) => {
-    legendBar.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${COLORS[n]||'#888'}"></span>${n} ${v}社</span>`;
+  sorted.slice(0,5).forEach(([n,v])=>{
+    legendBar.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${COLORS[n]||'#888'}"></span>${n} ${v}件</span>`;
   });
-  if (barChartInst) barChartInst.destroy();
-  barChartInst = new Chart(document.getElementById('barChart'), {
-    type: 'bar',
-    data: {
-      labels: sorted.map(x => x[0]),
-      datasets: [{ data: sorted.map(x => x[1]), backgroundColor: sorted.map(x => COLORS[x[0]] || '#888'), borderRadius: 4 }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.x}社` } } },
-      scales: {
-        x: { ticks: { stepSize: 1, color: '#888' }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y: { ticks: { color: '#555', font: { size: 11 } }, grid: { display: false } }
-      }
-    }
+  if(barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart'),{
+    type:'bar',
+    data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:sorted.map(x=>COLORS[x[0]]||'#888'),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}件`}}},scales:{x:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}},y:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}}}
   });
 
-  // 円グラフ
   const catData = [
-    { label: '営業・売上',  keys: ['売上拡大','リード獲得','商談数増加','インサイドセールス'], color: '#3266ad' },
-    { label: '採用・組織',  keys: ['中途採用','新卒採用','採用ブランディング','営業組織構築'], color: '#D85A30' },
-    { label: 'DX・その他', keys: ['AI活用','LLMO対策','業務効率化','M&A(買手)'],            color: '#D4537E' },
-    { label: 'アライアンス', keys: ['アライアンス先探し'],                                    color: '#888780' },
+    {label:'営業・売上',keys:['売上拡大','リード獲得','商談数増加','インサイドセールス'],color:'#3266ad'},
+    {label:'採用・組織',keys:['中途採用','新卒採用','採用ブランディング','営業組織構築'],color:'#D85A30'},
+    {label:'DX・その他',keys:['AI活用','LLMO対策','業務効率化','M&A(買手)'],color:'#D4537E'},
+    {label:'アライアンス',keys:['アライアンス先探し'],color:'#888780'},
   ];
-  catData.forEach(c => { c.value = c.keys.reduce((s, k) => s + (needsCount[k] || 0), 0); });
-  const catTotal = catData.reduce((s, c) => s + c.value, 0);
-
+  catData.forEach(c=>{c.value=c.keys.reduce((s,k)=>s+(nc[k]||0),0);});
+  const catTotal = catData.reduce((s,c)=>s+c.value,0);
   const legendPie = document.getElementById('legendPie');
-  legendPie.innerHTML = '';
-  catData.forEach(c => {
-    legendPie.innerHTML += `<span class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.label} ${catTotal ? Math.round(c.value / catTotal * 100) : 0}%</span>`;
+  legendPie.innerHTML='';
+  catData.forEach(c=>{legendPie.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${c.color}"></span>${c.label} ${catTotal?Math.round(c.value/catTotal*100):0}%</span>`;});
+  if(pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart'),{
+    type:'doughnut',
+    data:{labels:catData.map(c=>c.label),datasets:[{data:catData.map(c=>c.value),backgroundColor:catData.map(c=>c.color),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed}件`}}},cutout:'60%'}
   });
-  if (pieChartInst) pieChartInst.destroy();
-  pieChartInst = new Chart(document.getElementById('pieChart'), {
-    type: 'doughnut',
-    data: { labels: catData.map(c => c.label), datasets: [{ data: catData.map(c => c.value), backgroundColor: catData.map(c => c.color), borderWidth: 2, borderColor: '#fff' }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.label}: ${c.parsed}件` } } }, cutout: '60%' }
-  });
-
-  renderTable();
+  renderNeedsTable();
 }
 
-function setFilter(f, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+function setNeedsFilter(f, btn) {
+  needsFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  currentFilter = f;
-  renderTable();
+  renderNeedsTable();
 }
 
-let currentFilter = 'all';
-
-function matchFilter(needs, f) {
-  if (f === 'all') return true;
-  if (f === '採用') return needs.some(n => n.includes('採用') || n.includes('組織') || n.includes('ブランディング'));
-  if (f === 'AI')   return needs.some(n => ['AI活用','LLMO対策','業務効率化'].includes(n));
+function matchNeedsFilter(needs, f) {
+  if(f==='all') return true;
+  if(f==='採用') return needs.some(n=>n.includes('採用')||n.includes('組織')||n.includes('ブランディング'));
+  if(f==='AI')   return needs.some(n=>['AI活用','LLMO対策','業務効率化'].includes(n));
   return needs.includes(f);
 }
 
-function renderTable() {
-  const filtered = allCompanies.filter(c => matchFilter(c.needs, currentFilter));
-  document.getElementById('tbody').innerHTML = filtered.map(c => {
-    const badges = c.needs.map(n => `<span class="badge" style="background:${COLORS[n]||'#888'}18;color:${COLORS[n]||'#555'};border:1px solid ${COLORS[n]||'#888'}40">${n}</span>`).join('');
-    return `<tr><td>${c.name}</td><td>${badges}</td></tr>`;
+function renderNeedsTable() {
+  const filtered = allData.filter(r=>matchNeedsFilter(r.needs, needsFilter));
+  document.getElementById('needsTbody').innerHTML = filtered.map(r=>{
+    const badges = r.needs.map(n=>`<span class="badge" style="background:${COLORS[n]||'#888'}18;color:${COLORS[n]||'#555'};border:1px solid ${COLORS[n]||'#888'}40">${n}</span>`).join('');
+    return `<tr><td>${r.company}</td><td>${badges}</td></tr>`;
   }).join('');
-  document.getElementById('tableFooter').textContent = `${filtered.length}社 / 全${allCompanies.length}社`;
+  document.getElementById('needsFooter').textContent = `${filtered.length}社 / 全${allData.length}社`;
+}
+
+// ===== タブ2: 全回答一覧 =====
+function filterAll() {
+  const q = (document.getElementById('searchInput').value||'').toLowerCase();
+  const s = document.getElementById('sessionFilter').value;
+  const filtered = allData.filter(r=>{
+    const mq = !q || r.company.toLowerCase().includes(q) || r.needs.join('').toLowerCase().includes(q);
+    const ms = !s || r.session.includes(s);
+    return mq && ms;
+  });
+  document.getElementById('allTbody').innerHTML = filtered.map(r=>{
+    const badges = r.needs.map(n=>`<span class="badge" style="background:${COLORS[n]||'#888'}18;color:${COLORS[n]||'#555'};border:1px solid ${COLORS[n]||'#888'}40">${n}</span>`).join('');
+    const sc = r.overall>=5?'#1D9E75':r.overall>=4?'#3266ad':r.overall>0?'#D85A30':'#888';
+    const ss = r.seat>=5?'#1D9E75':r.seat>=4?'#3266ad':r.seat>0?'#D85A30':'#888';
+    const sessionShort = r.session.replace(/【.*?】/g,'').replace(/2026年/g,'').trim().substring(0,20);
+    return `<tr><td>${r.company}</td><td style="font-size:10px;color:#888">${sessionShort}</td><td style="color:${ss};font-weight:500;text-align:center">${r.seat||'—'}</td><td style="color:${sc};font-weight:500;text-align:center">${r.overall||'—'}</td><td>${badges}</td></tr>`;
+  }).join('');
+  document.getElementById('allFooter').textContent = `${filtered.length}件 / 全${allData.length}件`;
+}
+
+function renderAll() { filterAll(); }
+
+// ===== タブ3: 満足度 =====
+function renderSatisfaction() {
+  const valid = allData.filter(r=>r.overall>0);
+  const total = valid.length;
+  const seatAvg = total ? (valid.reduce((s,r)=>s+r.seat,0)/total).toFixed(1) : '—';
+  const ovAvg   = total ? (valid.reduce((s,r)=>s+r.overall,0)/total).toFixed(1) : '—';
+  const perfect = total ? Math.round(valid.filter(r=>r.overall===5).length/total*100)+'%' : '—';
+
+  document.getElementById('s-seat').textContent    = seatAvg;
+  document.getElementById('s-overall').textContent = ovAvg;
+  document.getElementById('s-perfect').textContent = perfect;
+  document.getElementById('s-count').textContent   = total;
+
+  const seatDist = [1,2,3,4,5].map(s=>valid.filter(r=>r.seat===s).length);
+  const ovDist   = [1,2,3,4,5].map(s=>valid.filter(r=>r.overall===s).length);
+  const barColors = ['#D85A30','#D85A30','#BA7517','#3266ad','#1D9E75'];
+
+  if(seatChartInst) seatChartInst.destroy();
+  seatChartInst = new Chart(document.getElementById('seatChart'),{
+    type:'bar',data:{labels:['1','2','3','4','5'],datasets:[{data:seatDist,backgroundColor:barColors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y}社`}}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+  if(overallChartInst) overallChartInst.destroy();
+  overallChartInst = new Chart(document.getElementById('overallChart'),{
+    type:'bar',data:{labels:['1','2','3','4','5'],datasets:[{data:ovDist,backgroundColor:barColors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y}社`}}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+
+  document.getElementById('satisfTbody').innerHTML = valid.map(r=>{
+    const sc = r.overall>=5?'#1D9E75':r.overall>=4?'#3266ad':'#D85A30';
+    const ss = r.seat>=5?'#1D9E75':r.seat>=4?'#3266ad':'#D85A30';
+    const comment = r.learning || r.overallReason || '—';
+    return `<tr><td>${r.company}</td><td style="color:${ss};font-weight:500;text-align:center">${r.seat}</td><td style="color:${sc};font-weight:500;text-align:center">${r.overall}</td><td style="font-size:11px;color:#888">${comment.substring(0,80)}${comment.length>80?'…':''}</td></tr>`;
+  }).join('');
+}
+
+// ===== タブ4: 日程別分析 =====
+function buildDateSelect() {
+  const dates = {};
+  allData.forEach(r=>{
+    const key = r.session.trim();
+    if(!dates[key]) dates[key]=[];
+    dates[key].push(r);
+  });
+  const sel = document.getElementById('dateSelect');
+  sel.innerHTML = '<option value="__all__">すべての日程（累計）</option>';
+  Object.keys(dates).sort().reverse().forEach(key=>{
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = key.replace(/【|】/g,'').trim() + `（${dates[key].length}社）`;
+    sel.appendChild(opt);
+  });
+}
+
+function renderByDate() {
+  const val = document.getElementById('dateSelect').value;
+  const data = val === '__all__' ? allData : allData.filter(r=>r.session.trim()===val);
+
+  const nc = getNeedsCount(data);
+  const sorted = Object.entries(nc).sort((a,b)=>b[1]-a[1]);
+  const totalNeeds = Object.values(nc).reduce((s,v)=>s+v,0);
+  const valid = data.filter(r=>r.overall>0);
+  const ovAvg = valid.length ? (valid.reduce((s,r)=>s+r.overall,0)/valid.length).toFixed(1) : '—';
+
+  document.getElementById('d-total').textContent = data.length + '社';
+  document.getElementById('d-needs').textContent = totalNeeds + '件';
+  document.getElementById('d-top').textContent   = sorted[0]?.[0] || '—';
+  document.getElementById('d-sat').textContent   = ovAvg;
+
+  const max = sorted[0]?.[1] || 1;
+  document.getElementById('dateNeedsRanking').innerHTML = sorted.slice(0,8).map(([n,v],i)=>
+    `<div class="needs-bar">
+      <span style="font-size:11px;color:#888;min-width:14px;font-weight:500">${i+1}</span>
+      <span style="min-width:100px;font-size:11px;color:#1a1a18">${n}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(v/max*100)}%;background:${COLORS[n]||'#888'}"></div></div>
+      <span style="font-size:11px;color:#888;min-width:28px;text-align:right">${v}件</span>
+    </div>`
+  ).join('');
+
+  const ovDist = [1,2,3,4,5].map(s=>valid.filter(r=>r.overall===s).length);
+  if(dateSatChartInst) dateSatChartInst.destroy();
+  dateSatChartInst = new Chart(document.getElementById('dateSatChart'),{
+    type:'bar',data:{labels:['1','2','3','4','5'],datasets:[{data:ovDist,backgroundColor:['#D85A30','#D85A30','#BA7517','#3266ad','#1D9E75'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y}社`}}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+
+  document.getElementById('dateTbody').innerHTML = data.map(r=>{
+    const badges = r.needs.map(n=>`<span class="badge" style="background:${COLORS[n]||'#888'}18;color:${COLORS[n]||'#555'};border:1px solid ${COLORS[n]||'#888'}40">${n}</span>`).join('');
+    const sc = r.overall>=5?'#1D9E75':r.overall>=4?'#3266ad':r.overall>0?'#D85A30':'#888';
+    const ss = r.seat>=5?'#1D9E75':r.seat>=4?'#3266ad':r.seat>0?'#D85A30':'#888';
+    return `<tr><td>${r.company}</td><td style="color:${ss};font-weight:500;text-align:center">${r.seat||'—'}</td><td style="color:${sc};font-weight:500;text-align:center">${r.overall||'—'}</td><td>${badges}</td></tr>`;
+  }).join('');
+  document.getElementById('dateFooter').textContent = `${data.length}社`;
 }
 
 loadData();
