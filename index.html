@@ -262,16 +262,19 @@ async function loadData(){
     const text=await res.text();
     const rows=parseCSV(text);
 
-    allData=rows.map(row=>({
+    allData=rows.map(row=>{
+      const rawSession=(row[3]||'').trim();
+      const session=/^【(昼|夜)】/.test(rawSession)?rawSession:'';
+      return {
       company:(row[1]||'').trim(),
       name:(row[2]||'').trim(),
-      session:(row[3]||'').trim(),
+      session,
       seat:parseInt(row[4])||0,
       overall:parseInt(row[6])||0,
       learning:(row[8]||'').trim(),
       overallReason:(row[7]||'').trim(),
-      needs:(row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''&&n!=='業務委託・アルバイト採用'),
-    })).filter(r=>r.company&&r.company!=='test');
+      needs:(row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''&&n!=='業務委託・アルバイト採用'&&n!=='資金調達'),
+    };}).filter(r=>r.company&&r.company!=='test');
 
     document.getElementById('updatedAt').textContent='更新: '+new Date().toLocaleString('ja-JP');
     buildDateSelects();
