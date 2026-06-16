@@ -270,7 +270,7 @@ async function loadData(){
       overall:parseInt(row[6])||0,
       learning:(row[8]||'').trim(),
       overallReason:(row[7]||'').trim(),
-      needs:(row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''),
+      needs:(row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''&&n!=='業務委託・アルバイト採用'),
     })).filter(r=>r.company&&r.company!=='test');
 
     document.getElementById('updatedAt').textContent='更新: '+new Date().toLocaleString('ja-JP');
