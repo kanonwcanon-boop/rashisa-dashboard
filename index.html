@@ -302,12 +302,12 @@ async function loadData(){
   document.getElementById('content').style.display='none';
   document.getElementById('errorBox').style.display='none';
   try{
+    const src = SOURCES[currentMode];
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${src.sheetId}/export?format=csv&gid=${src.gid}`;
     const res=await fetch(CSV_URL);
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const text=await res.text();
     const rows=parseCSV(text);
-
-    const src = SOURCES[currentMode];
     allData=rows.map(row=>{
       const rawSession=(row[src.sessionCol]||'').trim();
       const session=rawSession||'';
