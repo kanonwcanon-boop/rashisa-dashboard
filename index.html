@@ -60,6 +60,12 @@ input[type=text],select{border:1px solid #d0cfc8;border-radius:6px;background:#f
   </div>
 </div>
 
+<!-- 会種別切り替え -->
+<div style="background:#fff;border-bottom:2px solid #e8e6df;display:flex;padding:0 20px">
+  <button id="modeBtn-regular" onclick="switchMode('regular')" style="padding:10px 20px;font-size:13px;font-weight:500;border:none;background:transparent;color:#3266ad;cursor:pointer;border-bottom:2px solid #3266ad;margin-bottom:-2px">レギュラー会</button>
+  <button id="modeBtn-segment" onclick="switchMode('segment')" style="padding:10px 20px;font-size:13px;font-weight:500;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">セグメント会</button>
+</div>
+
 <div class="tab-bar">
   <button class="tab-btn active" onclick="switchTab('needs',this)">ニーズ分析</button>
   <button class="tab-btn" onclick="switchTab('all',this)">全回答一覧</button>
