@@ -297,8 +297,7 @@ function extractDate(session){
 
 function sessionLabel(session, short=false){
   if(!session)return '—';
-  // D列/E列の内容をそのまま表示（【昼】【夜】を除去）
-  return session.replace(/^【(昼|夜)】\s*/, '').trim() || '—';
+  return session.trim() || '—';
 }
 
 async function loadData(){
