@@ -297,14 +297,8 @@ function extractDate(session){
 
 function sessionLabel(session, short=false){
   if(!session)return '—';
-  const m=session.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
-  const part=session.includes('昼')?'昼':'夜';
-  if(!m) return session.substring(0,30);
-  const dateStr = `${m[2]}/${m[3]}（${part}）`;
-  if(short) return dateStr;
-  // 日付以降の会名を抽出（例: 大交流会@歌舞伎町）
-  const afterDate = session.replace(/\d{4}年\d{1,2}月\d{1,2}日（.）/,'').replace(/^【.*?】/,'').trim();
-  return afterDate ? `${dateStr} ${afterDate}` : dateStr;
+  // D列/E列の内容をそのまま表示（【昼】【夜】を除去）
+  return session.replace(/^【(昼|夜)】\s*/, '').trim() || '—';
 }
 
 async function loadData(){
