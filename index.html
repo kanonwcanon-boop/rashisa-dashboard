@@ -219,9 +219,40 @@ input[type=text],select{border:1px solid #d0cfc8;border-radius:6px;background:#f
 </div>
 
 <script>
-const SHEET_ID = '1m8Fxzo3-174zPjnbhRxnK6BtFRu_wJQ7s84zyDDoYCU';
-const GID = '1996000310';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const SOURCES = {
+  regular: {
+    sheetId: '1m8Fxzo3-174zPjnbhRxnK6BtFRu_wJQ7s84zyDDoYCU',
+    gid: '1996000310',
+    needsCol: 16,   // Q列
+    sessionCol: 3,  // D列
+    seatCol: 4,     // E列
+    overallCol: 6,  // G列
+    learningCol: 8, // I列
+    overallReasonCol: 7,
+  },
+  segment: {
+    sheetId: '1oGHxn0l6ZLQ4gsJnqGjAaFu72rEWSVmxJMo6Gej7q0s',
+    gid: '2003547235',
+    needsCol: 13,   // N列
+    sessionCol: 4,  // E列
+    seatCol: null,
+    overallCol: 6,  // G列
+    learningCol: 11,
+    overallReasonCol: 11,
+  }
+};
+
+let currentMode = 'regular';
+
+function switchMode(mode) {
+  currentMode = mode;
+  ['regular','segment'].forEach(m => {
+    const btn = document.getElementById('modeBtn-'+m);
+    btn.style.color = m === mode ? '#3266ad' : '#888';
+    btn.style.borderBottom = m === mode ? '2px solid #3266ad' : '2px solid transparent';
+  });
+  loadData();
+}
 
 const COLORS = {
   '売上拡大':'#3266ad','リード獲得':'#1D9E75','商談数増加':'#7F77DD',
@@ -276,18 +307,19 @@ async function loadData(){
     const text=await res.text();
     const rows=parseCSV(text);
 
+    const src = SOURCES[currentMode];
     allData=rows.map(row=>{
-      const rawSession=(row[3]||'').trim();
-      const session=/^【(昼|夜)】/.test(rawSession)?rawSession:'';
+      const rawSession=(row[src.sessionCol]||'').trim();
+      const session=rawSession||'';
       return {
       company:(row[1]||'').trim(),
       name:(row[2]||'').trim(),
       session,
-      seat:parseInt(row[4])||0,
-      overall:parseInt(row[6])||0,
-      learning:(row[8]||'').trim(),
-      overallReason:(row[7]||'').trim(),
-      needs:(row[16]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''&&n!=='業務委託・アルバイト採用'&&n!=='資金調達'),
+      seat:src.seatCol!==null?(parseInt(row[src.seatCol])||0):0,
+      overall:parseInt(row[src.overallCol])||0,
+      learning:(row[src.learningCol]||'').trim(),
+      overallReason:(row[src.overallReasonCol]||'').trim(),
+      needs:(row[src.needsCol]||'').split(',').map(n=>n.trim()).filter(n=>n&&n!=='特になし'&&n!==''&&n!=='業務委託・アルバイト採用'&&n!=='資金調達'),
     };}).filter(r=>r.company&&r.company!=='test');
 
     document.getElementById('updatedAt').textContent='更新: '+new Date().toLocaleString('ja-JP');
