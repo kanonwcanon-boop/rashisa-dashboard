@@ -320,7 +320,9 @@ async function loadData(){
     const rows=parseCSV(text);
     allData=rows.map(row=>{
       const rawSession=(row[src.sessionCol]||'').trim();
-      const session=rawSession||'';
+      // 【昼】【夜】で始まるか、年月日を含む場合のみ有効な日程とする
+      const isValidSession = /^【(昼|夜)】/.test(rawSession) || /\d{4}年\d{1,2}月\d{1,2}日/.test(rawSession);
+      const session = isValidSession ? rawSession : '';
       return {
       company:(row[1]||'').trim(),
       name:(row[2]||'').trim(),
