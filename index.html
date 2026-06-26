@@ -64,6 +64,7 @@ input[type=text],select{border:1px solid #d0cfc8;border-radius:6px;background:#f
 <div style="background:#fff;border-bottom:2px solid #e8e6df;display:flex;padding:0 20px">
   <button id="modeBtn-regular" onclick="switchMode('regular')" style="padding:10px 20px;font-size:13px;font-weight:500;border:none;background:transparent;color:#3266ad;cursor:pointer;border-bottom:2px solid #3266ad;margin-bottom:-2px">レギュラー会</button>
   <button id="modeBtn-segment" onclick="switchMode('segment')" style="padding:10px 20px;font-size:13px;font-weight:500;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">セグメント会</button>
+  <button id="modeBtn-all" onclick="switchMode('all')" style="padding:10px 20px;font-size:13px;font-weight:500;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px">全体</button>
 </div>
 
 <div class="tab-bar">
@@ -71,6 +72,7 @@ input[type=text],select{border:1px solid #d0cfc8;border-radius:6px;background:#f
   <button class="tab-btn" onclick="switchTab('all',this)">全回答一覧</button>
   <button class="tab-btn" onclick="switchTab('satisfaction',this)">満足度</button>
   <button class="tab-btn" onclick="switchTab('bydate',this)">日程別分析</button>
+  <button class="tab-btn" onclick="switchTab('all-overview',this)">全体サマリー</button>
   <button class="tab-btn" onclick="switchTab('seating',this)">席順管理</button>
 </div>
 
@@ -208,6 +210,37 @@ input[type=text],select{border:1px solid #d0cfc8;border-radius:6px;background:#f
       </div>
     </div>
 
+    <!-- タブ5: 全体サマリー -->
+    <div id="tab-all-overview" class="tab-content">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">総回答数（延べ・全体）</div><div class="stat-value" id="ao-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">最多ニーズ</div><div class="stat-value sm" id="ao-top">—</div></div>
+        <div class="stat-card"><div class="stat-label">レギュラー会（延べ）</div><div class="stat-value" id="ao-regular">—</div></div>
+        <div class="stat-card"><div class="stat-label">セグメント会（延べ）</div><div class="stat-value" id="ao-segment">—</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">全体ニーズ別の回答数（レギュラー会＋セグメント会）</div>
+          <div class="legend" id="ao-legendBar"></div>
+          <div style="position:relative;height:320px"><canvas id="ao-barChart" role="img" aria-label="全体ニーズ別回答数">全体ニーズ別回答数</canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">満足度比較（全体満足度の分布）</div>
+          <div style="display:flex;gap:16px;margin-bottom:8px">
+            <div style="text-align:center">
+              <div style="font-size:11px;color:#888">レギュラー会平均</div>
+              <div style="font-size:22px;font-weight:500;color:#3266ad" id="ao-sat-r">—</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:11px;color:#888">セグメント会平均</div>
+              <div style="font-size:22px;font-weight:500;color:#1D9E75" id="ao-sat-s">—</div>
+            </div>
+          </div>
+          <div style="position:relative;height:240px"><canvas id="ao-satChart" role="img" aria-label="満足度比較グラフ">満足度比較</canvas></div>
+        </div>
+      </div>
+    </div>
+
     <!-- タブ5: 席順管理 -->
     <div id="tab-seating" class="tab-content">
       <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -252,12 +285,17 @@ let currentMode = 'regular';
 
 function switchMode(mode) {
   currentMode = mode;
-  ['regular','segment'].forEach(m => {
+  ['regular','segment','all'].forEach(m => {
     const btn = document.getElementById('modeBtn-'+m);
+    if(!btn) return;
     btn.style.color = m === mode ? '#3266ad' : '#888';
     btn.style.borderBottom = m === mode ? '2px solid #3266ad' : '2px solid transparent';
   });
-  loadData();
+  if(mode === 'all') {
+    loadAllData();
+  } else {
+    loadData();
+  }
 }
 
 const COLORS = {
@@ -298,6 +336,118 @@ function extractDate(session){
 function sessionLabel(session, short=false){
   if(!session)return '—';
   return session.trim() || '—';
+}
+
+// 全体モード用チャートインスタンス
+let allBarCI=null, allPieCI=null, allSatCI=null;
+
+async function loadAllData(){
+  document.getElementById('loading').style.display='block';
+  document.getElementById('content').style.display='none';
+  document.getElementById('errorBox').style.display='none';
+
+  try{
+    // レギュラー会とセグメント会を並行取得
+    const srcR = SOURCES['regular'];
+    const srcS = SOURCES['segment'];
+    const urlR = `https://docs.google.com/spreadsheets/d/${srcR.sheetId}/export?format=csv&gid=${srcR.gid}`;
+    const urlS = `https://docs.google.com/spreadsheets/d/${srcS.sheetId}/export?format=csv&gid=${srcS.gid}`;
+
+    const [resR, resS] = await Promise.all([fetch(urlR), fetch(urlS)]);
+    if(!resR.ok) throw new Error(`レギュラー会 HTTP ${resR.status}`);
+    if(!resS.ok) throw new Error(`セグメント会 HTTP ${resS.status}`);
+
+    const [textR, textS] = await Promise.all([resR.text(), resS.text()]);
+    const rowsR = parseCSV(textR);
+    const rowsS = parseCSV(textS);
+
+    const EXCLUDE = ['特になし','','業務委託・アルバイト採用','資金調達'];
+
+    const parseRows = (rows, src) => rows.map(row => {
+      const rawSession=(row[src.sessionCol]||'').trim();
+      const isValid = /^【(昼|夜)】/.test(rawSession) || /\d{4}年\d{1,2}月\d{1,2}日/.test(rawSession);
+      return {
+        company:(row[1]||'').trim(),
+        session: isValid ? rawSession : '',
+        seat: src.seatCol!==null?(parseInt(row[src.seatCol])||0):0,
+        overall: parseInt(row[src.overallCol])||0,
+        learning:(row[src.learningCol]||'').trim(),
+        needs:(row[src.needsCol]||'').split(',').map(n=>n.trim()).filter(n=>n&&!EXCLUDE.includes(n)),
+      };
+    }).filter(r=>r.company&&r.company!=='test');
+
+    const dataR = parseRows(rowsR, SOURCES['regular']);
+    const dataS = parseRows(rowsS, SOURCES['segment']);
+    allData = [...dataR, ...dataS];
+
+    document.getElementById('updatedAt').textContent='更新: '+new Date().toLocaleString('ja-JP');
+    renderAllOverview(dataR, dataS);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+
+    // 全体タブのみ表示
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('tab-all-overview').classList.add('active');
+    document.querySelector('[onclick="switchTab('all-overview',this)"]')?.classList.add('active');
+
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('errorBox').style.display='block';
+    document.getElementById('errorBox').textContent='データ取得エラー: '+e.message;
+  }
+}
+
+function renderAllOverview(dataR, dataS) {
+  const ncR = getNeedsCount(dataR);
+  const ncS = getNeedsCount(dataS);
+  const ncAll = {};
+  [...Object.keys(ncR), ...Object.keys(ncS)].forEach(k => {
+    ncAll[k] = (ncR[k]||0) + (ncS[k]||0);
+  });
+  const sorted = Object.entries(ncAll).sort((a,b)=>b[1]-a[1]);
+  const totalNeeds = Object.values(ncAll).reduce((s,v)=>s+v,0);
+
+  document.getElementById('ao-total').textContent = totalNeeds+'件';
+  document.getElementById('ao-top').textContent = sorted[0]?.[0]||'—';
+  document.getElementById('ao-regular').textContent = Object.values(ncR).reduce((s,v)=>s+v,0)+'件';
+  document.getElementById('ao-segment').textContent = Object.values(ncS).reduce((s,v)=>s+v,0)+'件';
+
+  // ニーズ棒グラフ
+  const legendEl = document.getElementById('ao-legendBar');
+  legendEl.innerHTML='';
+  sorted.slice(0,5).forEach(([n,v])=>{
+    legendEl.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${COLORS[n]||'#888'}"></span>${n} ${v}件</span>`;
+  });
+  if(allBarCI) allBarCI.destroy();
+  allBarCI = new Chart(document.getElementById('ao-barChart'),{
+    type:'bar',
+    data:{labels:sorted.map(x=>x[0]),datasets:[{data:sorted.map(x=>x[1]),backgroundColor:sorted.map(x=>COLORS[x[0]]||'#888'),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.x}件`}}},scales:{x:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}},y:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}}}
+  });
+
+  // 満足度比較グラフ
+  const validR = dataR.filter(r=>r.overall>0);
+  const validS = dataS.filter(r=>r.overall>0);
+  const avgR = validR.length?(validR.reduce((s,r)=>s+r.overall,0)/validR.length).toFixed(1):0;
+  const avgS = validS.length?(validS.reduce((s,r)=>s+r.overall,0)/validS.length).toFixed(1):0;
+  document.getElementById('ao-sat-r').textContent = avgR;
+  document.getElementById('ao-sat-s').textContent = avgS;
+
+  const satR = [1,2,3,4,5].map(s=>validR.filter(r=>r.overall===s).length);
+  const satS = [1,2,3,4,5].map(s=>validS.filter(r=>r.overall===s).length);
+  if(allSatCI) allSatCI.destroy();
+  allSatCI = new Chart(document.getElementById('ao-satChart'),{
+    type:'bar',
+    data:{
+      labels:['1','2','3','4','5'],
+      datasets:[
+        {label:'レギュラー会',data:satR,backgroundColor:'#3266ad',borderRadius:4},
+        {label:'セグメント会',data:satS,backgroundColor:'#1D9E75',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top'},tooltip:{callbacks:{label:c=>` ${c.parsed.y}社`}}},scales:{x:{ticks:{color:'#888'}},y:{ticks:{stepSize:1,color:'#888'},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
 }
 
 async function loadData(){
